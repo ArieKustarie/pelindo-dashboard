@@ -5190,31 +5190,38 @@ body.light-mode .database-sheet-table td:first-child,
     <?!= include('Script'); ?>
   
     <script>
-const GAS_URL = 'https://script.google.com/macros/s/AKfycby0wbR7vJMbktHcC8EXQqA3MT0_AbTLJQgBkDjSRzla1LTpuNEXeWbFmaLzyxbV1qEbJw/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwx6DUKVf8GEqo058ON3YnsBtBQ9Y1mGGjO8dphNtzAb4n0tdiPmWALUakSKSuaKQs7VA/exec';
 
 /**
  * Fungsi utama pengganti google.script.run
+ * Menggunakan GET request dengan encoded payload untuk menghindari CORS preflight.
  */
 async function callGAS(action, payload, token) {
-  const body = {
+  const params = new URLSearchParams({
     action: action,
     token: token || authToken || '',
-    payload: payload || {}
-  };
-  const response = await fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    payload: JSON.stringify(payload || {})
   });
+
+  const url = GAS_URL + '?' + params.toString();
+
+  const response = await fetch(url, {
+    method: 'GET',
+    redirect: 'follow'
+  });
+
   if (!response.ok) {
     throw new Error('HTTP error ' + response.status + ': ' + response.statusText);
   }
+
   const data = await response.json();
+
   if (data && data.ok === false) {
     const err = new Error(data.message || 'Error dari server.');
     err.gasError = true;
     throw err;
   }
+
   return data;
 }
 
